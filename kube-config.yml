@@ -1,0 +1,267 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: regionservice
+  annotations:
+    description: "Region Service"
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: regionservice
+  template:
+    metadata:
+      labels:
+        app: regionservice
+    spec:
+      containers:
+      - name: regionservice
+        image: vmrsilva/techchallange-fase4-region
+        ports:
+        - containerPort: 8080
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: contactservice
+  annotations:
+    description: "Contact Service"
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: contactservice
+  template:
+    metadata:
+      labels:
+        app: contactservice
+    spec:
+      containers:
+      - name: contactservice
+        image: vmrsilva/techchallange-fase4-contact
+        ports:
+        - containerPort: 8080
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: regionconsumer
+  annotations:
+    description: "Deployment for consumer region"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: regionconsumer
+  template:
+    metadata:
+      labels:
+        app: regionconsumer
+    spec:
+      containers:
+      - name: regionconsumer
+        image: vmrsilva/techchallange-fase4-region-consumer
+        ports:
+        - containerPort: 5050
+        resources:
+          requests:
+            memory: "100Mi"
+          limits:
+            memory: "100Mi"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: contactconsumer
+  annotations:
+    description: "Deployment for consumer contacts"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: contactconsumer
+  template:
+    metadata:
+      labels:
+        app: contactconsumer
+    spec:
+      containers:
+      - name: contactconsumer
+        image: vmrsilva/techchallange-fase4-contact-consumer
+        ports:
+        - containerPort: 6060
+        resources:
+          requests:
+            memory: "100Mi"
+          limits:
+            memory: "100Mi"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rabbitmq-app
+  annotations:
+    description: "Deployment for rabbitmq"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: rabbitmq-app
+  template:
+    metadata:
+      labels:
+        app: rabbitmq-app
+    spec:
+      containers:
+      - name: rabbitmq-app
+        image: rabbitmq:3-management
+        ports:
+        - containerPort: 5672
+        - containerPort: 15672
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: prometheus-app
+  annotations:
+    description: "Deployment for prometheus"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: prometheus-app
+  template:
+    metadata:
+      labels:
+        app: prometheus-app
+    spec:
+      containers:
+      - name: prometheus-coll
+        image: prom/prometheus:latest
+        ports:
+        - containerPort: 9090
+        volumeMounts:
+            - name: config-volume
+              mountPath: /etc/prometheus/
+      volumes:
+        - name: config-volume
+          configMap:
+            name: prometheus-config
+            defaultMode: 420
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: grafana-app
+  annotations:
+    description: "Deployment for grafana"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+       app: grafana-app
+  template:
+    metadata:
+     labels:
+       app: grafana-app
+    spec:
+      containers:
+      - name: grafana
+        image: grafana/grafana:latest
+        # args:
+        # - '--config=/grafana.ini'
+        ports:
+        - containerPort: 3000
+        # securityContext:
+        #   runAsUser: 0
+        volumeMounts:
+            - name: config-volume
+              mountPath: /var/lib/grafana
+      volumes:
+        - name: config-volume
+          persistentVolumeClaim:
+            claimName: grafana-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: sv-region-api
+spec:
+  type: NodePort
+  selector:
+    app: regionservice
+  ports:
+  - protocol: TCP
+    port: 5050
+    targetPort: 8080
+    nodePort: 30080
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: sv-contact-api
+spec:
+  type: NodePort
+  selector:
+    app: contactservice
+  ports:
+  - protocol: TCP
+    port: 4040
+    targetPort: 8080
+    nodePort: 30071
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: rabbitmq-service
+spec:
+  type: NodePort
+  selector:
+    app: rabbitmq-app
+  ports:
+  - protocol: TCP
+    port: 5672
+    targetPort: 5672
+    nodePort: 30070
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: rabbitmq-ui
+spec:
+  type: NodePort
+  selector:
+    app: rabbitmq-app
+  ports:
+  - protocol: TCP
+    port: 15672
+    targetPort: 15672
+    nodePort: 30060
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: sv-prometheus
+spec:
+  type: NodePort
+  selector:
+    app: prometheus-app
+  ports:
+  - protocol: TCP
+    port: 9090
+    targetPort: 9090
+    nodePort: 30050
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: sv-grafana
+spec:
+  type: NodePort
+  selector:
+    app: grafana-app
+  ports:
+  - protocol: TCP
+    port: 3000
+    targetPort: 3000
+    nodePort: 30030
