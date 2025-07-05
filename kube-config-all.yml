@@ -67,6 +67,10 @@ data:
         metrics_path: /metrics
         static_configs:
           - targets: ["sv-contact-api:4040"]
+      - job_name: "fiap-prometheus-metrics-rabbitmq"
+        metrics_path: /metrics
+        static_configs:
+          - targets: ["rabbitmq-service:15692"]
 ---
 kind: ConfigMap
 apiVersion: v1
@@ -308,6 +312,7 @@ spec:
         ports:
         - containerPort: 5672
         - containerPort: 15672
+        - containerPort: 15692
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -434,10 +439,16 @@ spec:
   selector:
     app: rabbitmq-app
   ports:
-  - protocol: TCP
-    port: 5672
-    targetPort: 5672
-    nodePort: 30070
+    - name: amqp
+      protocol: TCP
+      port: 5672
+      targetPort: 5672
+      nodePort: 30070  # use esta porta livre
+    - name: prometheus
+      protocol: TCP
+      port: 15692
+      targetPort: 15692
+      nodePort: 30093  # use uma porta diferente de 30080
 ---
 apiVersion: v1
 kind: Service
@@ -448,10 +459,17 @@ spec:
   selector:
     app: rabbitmq-app
   ports:
-  - protocol: TCP
-    port: 15672
-    targetPort: 15672
-    nodePort: 30060
+    - name: management
+      protocol: TCP
+      port: 15672
+      targetPort: 15672
+      nodePort: 30060
+    - name: prometheus
+      protocol: TCP
+      port: 15692
+      targetPort: 15692
+      nodePort: 30092
+
 ---
 apiVersion: v1
 kind: Service
