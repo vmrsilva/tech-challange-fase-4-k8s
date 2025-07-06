@@ -46,6 +46,29 @@ spec:
       storage: 50Mi
 ---
 
+# Secrets
+apiVersion: v1
+kind: Secret
+metadata:
+  name: region-secret
+type: Opaque
+data:
+  ConnectionStrings__Database: U2VydmVyPXNxbHNlcnZlciwxNDMzO0RhdGFiYXNlPXRlY2hjaGFsbGVuZ2VyZWdpb247VXNlciBJZD1zYTtQYXNzd29yZD1Zb3VyU3Ryb25nIVBhc3N3MHJkO011bHRpcGxlQWN0aXZlUmVzdWx0U2V0cz1GYWxzZTtFbmNyeXB0PVRydWU7VHJ1c3RTZXJ2ZXJDZXJ0aWZpY2F0ZT1UcnVlO0Nvbm5lY3Rpb24gVGltZW91dD0zMDs=
+  MassTransit__User: Z3Vlc3Q=
+  MassTransit__Password: Z3Vlc3Q=
+---
+
+apiVersion: v1
+kind: Secret
+metadata:
+  name: contact-secret
+type: Opaque
+data:
+  ConnectionStrings__Database: U2VydmVyPXNxbHNlcnZlciwxNDMzO0RhdGFiYXNlPXRlY2hjaGFsbGVuZ2Vjb250YWN0O1VzZXIgSWQ9c2E7UGFzc3dvcmQ9WW91clN0cm9uZyFQYXNzdzByZDtNdWx0aXBsZUFjdGl2ZVJlc3VsdFNldHM9RmFsc2U7RW5jcnlwdD1UcnVlO1RydXN0U2VydmVyQ2VydGlmaWNhdGU9VHJ1ZTtDb25uZWN0aW9uIFRpbWVvdXQ9MzA7
+  MassTransit__User: Z3Vlc3Q=
+  MassTransit__Password: Z3Vlc3Q=
+---
+
 # configMap
 apiVersion: v1
 kind: ConfigMap
@@ -72,6 +95,7 @@ data:
         static_configs:
           - targets: ["rabbitmq-service:15692"]
 ---
+
 kind: ConfigMap
 apiVersion: v1
 metadata:
@@ -87,6 +111,7 @@ data:
       url: sv-prometheus:9090
       isDefault: true
 ---
+
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -94,9 +119,6 @@ metadata:
 data:
   MassTransit__QueueCreateRegion: region-insert-queue
   MassTransit__Server: rabbitmq-service
-  MassTransit__User: guest
-  MassTransit__Password: guest
-  ConnectionStrings__Database: "Server=sqlserver,1433;Database=techchallengeregion;User Id=sa;Password=YourStrong!Passw0rd;MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=True;Connection Timeout=30;"
   ConnectionStrings__Cache: sv-redis:6379
 ---
 
@@ -107,9 +129,6 @@ metadata:
 data:
   MassTransit__QueueCreateRegion: contact-insert-queue
   MassTransit__Server: rabbitmq-service
-  MassTransit__User: guest
-  MassTransit__Password: guest
-  ConnectionStrings__Database: "Server=sqlserver,1433;Database=techchallengecontact;User Id=sa;Password=YourStrong!Passw0rd;MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=True;Connection Timeout=30;"
   ConnectionStrings__Cache: sv-redis:6379
   Integrations__RegionApiUrl: http://sv-region-api:5050/api
 ---
@@ -175,6 +194,8 @@ spec:
         envFrom:
           - configMapRef:
               name: regionconsumer-env-config
+          - secretRef:
+              name: region-secret
         ports:
         - containerPort: 8080
         resources:
@@ -211,6 +232,8 @@ spec:
         envFrom:
           - configMapRef:
               name: contactconsumer-env-config
+          - secretRef:
+              name: contact-secret
         ports:
         - containerPort: 8080
         resources:
@@ -248,6 +271,8 @@ spec:
         envFrom:
             - configMapRef:
                 name: regionconsumer-env-config
+            - secretRef:
+                name: region-secret
         ports:
         - containerPort: 5050
         resources:
@@ -278,6 +303,8 @@ spec:
         envFrom:
           - configMapRef:
               name: contactconsumer-env-config
+          - secretRef:
+              name: contact-secret
         ports:
         - containerPort: 6060
         resources:
