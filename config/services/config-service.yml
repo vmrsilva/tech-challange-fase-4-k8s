@@ -5,7 +5,7 @@ metadata:
 spec:
   type: NodePort
   selector:
-    app: my-app
+    app: regionservice
   ports:
   - protocol: TCP
     port: 5050
@@ -19,7 +19,7 @@ metadata:
 spec:
   type: NodePort
   selector:
-    app: my-contact-api
+    app: contactservice
   ports:
   - protocol: TCP
     port: 4040
@@ -35,10 +35,16 @@ spec:
   selector:
     app: rabbitmq-app
   ports:
-  - protocol: TCP
-    port: 5672
-    targetPort: 5672
-    nodePort: 30070
+    - name: amqp
+      protocol: TCP
+      port: 5672
+      targetPort: 5672
+      nodePort: 30070
+    - name: prometheus
+      protocol: TCP
+      port: 15692
+      targetPort: 15692
+      nodePort: 30093
 ---
 apiVersion: v1
 kind: Service
@@ -49,10 +55,17 @@ spec:
   selector:
     app: rabbitmq-app
   ports:
-  - protocol: TCP
-    port: 15672
-    targetPort: 15672
-    nodePort: 30060
+    - name: management
+      protocol: TCP
+      port: 15672
+      targetPort: 15672
+      nodePort: 30060
+    - name: prometheus
+      protocol: TCP
+      port: 15692
+      targetPort: 15692
+      nodePort: 30092
+
 ---
 apiVersion: v1
 kind: Service
@@ -81,3 +94,34 @@ spec:
     port: 3000
     targetPort: 3000
     nodePort: 30030
+
+---
+
+  apiVersion: v1
+  kind: Service
+  metadata:
+    name: sqlserver
+  spec:
+    type: NodePort
+    selector:
+      app: sqlserver
+    ports:
+    - protocol: TCP
+      port: 1433
+      targetPort: 1433
+      nodePort: 31433
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: sv-redis
+spec:
+  type: NodePort
+  selector:
+    app: redis
+  ports:
+  - protocol: TCP
+    port: 6379
+    targetPort: 6379
+    nodePort: 30377
